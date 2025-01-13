@@ -1,6 +1,5 @@
-interface Window {
-  ethereum?: {
-    request: (args: { method: string; params?: any[] }) => Promise<any>;
-    isMetaMask?: boolean;
-  };
-}
+// Define window.ethereum interface for JavaScript
+// window.ethereum = {
+//   request: function(args) { return Promise.resolve(); },
+//   isMetaMask: false
+// };
