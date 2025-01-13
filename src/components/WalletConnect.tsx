@@ -15,10 +15,10 @@ import {
 const WalletConnect = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState("");
-  const [balance, setBalance] = useState("");
+  const [balance, setBalance] = useState<string>("");
   const { toast } = useToast();
 
-  const fetchBalance = async (address) => {
+  const fetchBalance = async (address: string) => {
     if (typeof window.ethereum !== 'undefined') {
       try {
         const balance = await window.ethereum.request({
@@ -39,7 +39,7 @@ const WalletConnect = () => {
     }
   }, [address]);
 
-  const connectWallet = async (walletType) => {
+  const connectWallet = async (walletType: string) => {
     if (typeof window.ethereum !== 'undefined') {
       try {
         const accounts = await window.ethereum.request({ 
