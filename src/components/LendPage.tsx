@@ -4,8 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { BorrowRequest } from "@/types/loans";
 import { useState } from "react";
+import WalletRequired from "./WalletRequired";
 
-// TODO: Replace with actual smart contract integration
 const mockBorrowRequests: BorrowRequest[] = [
   {
     borrower: "0x1234...5678",
@@ -44,7 +44,6 @@ const LendPage = () => {
   const { toast } = useToast();
   const [selectedLoan, setSelectedLoan] = useState<BorrowRequest | null>(null);
 
-  // TODO: Implement actual smart contract interaction
   const handleMatch = async (request: BorrowRequest) => {
     try {
       toast({
@@ -84,7 +83,8 @@ const LendPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <WalletRequired>
+      <div className="container mx-auto p-6 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Your Active Loans</CardTitle>
@@ -169,7 +169,8 @@ const LendPage = () => {
           </Table>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </WalletRequired>
   );
 };
 

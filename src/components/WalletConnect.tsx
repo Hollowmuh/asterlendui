@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useWallet } from "@/contexts/WalletContext";
 import { 
   Wallet,
   Coins,
@@ -15,18 +16,17 @@ import {
 } from "@/components/ui/dialog";
 
 const WalletConnect = () => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [address, setAddress] = useState("");
+  const { isConnected, setIsConnected, address, setAddress } = useWallet();
   const [balance, setBalance] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
-  const fetchBalance = async (address: string) => {
+  const fetchBalance = async (addr: string) => {
     if (typeof window.ethereum !== 'undefined') {
       try {
         const balance = await window.ethereum.request({
           method: 'eth_getBalance',
-          params: [address, 'latest']
+          params: [addr, 'latest']
         });
         const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
         setBalance(ethBalance.toFixed(4));

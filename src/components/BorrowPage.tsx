@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { LendOffer } from "@/types/loans";
+import WalletRequired from "./WalletRequired";
 
 // TODO: Replace with actual smart contract integration
 const mockLendOffers: LendOffer[] = [
@@ -74,113 +75,115 @@ const BorrowPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Active Loans</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Lender</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Interest Rate (%)</TableHead>
-                <TableHead>Duration (days)</TableHead>
-                <TableHead>Total Debt</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockLendOffers.map((offer, index) => (
-                <>
-                  <TableRow key={index}>
-                    <TableCell className="font-mono">{offer.lender}</TableCell>
-                    <TableCell>{offer.amount} ETH</TableCell>
-                    <TableCell>{offer.minInterestRate}%</TableCell>
-                    <TableCell>{offer.maxDuration}</TableCell>
-                    <TableCell>{offer.totalDebt} ETH</TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                        {offer.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-x-2">
-                        <Button
-                          onClick={() => setSelectedLoan(selectedLoan === offer ? null : offer)}
-                          variant="outline"
-                        >
-                          Manage
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  {selectedLoan === offer && (
-                    <TableRow>
-                      <TableCell colSpan={7}>
-                        <div className="p-4 bg-gray-50 rounded-lg space-y-4">
-                          <div className="flex items-center space-x-4">
-                            <Input
-                              type="number"
-                              placeholder="Enter amount to repay"
-                              value={repaymentAmount}
-                              onChange={(e) => setRepaymentAmount(e.target.value)}
-                              className="max-w-xs"
-                            />
-                            <Button
-                              onClick={() => handleRepayment(offer, repaymentAmount)}
-                              variant="default"
-                            >
-                              Partial Repayment
-                            </Button>
-                            <Button
-                              onClick={() => handleRepayment(offer, offer.totalDebt.toString())}
-                              variant="default"
-                            >
-                              Repay Full Amount
-                            </Button>
-                          </div>
+    <WalletRequired>
+      <div className="container mx-auto p-6 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Active Loans</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Lender</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Interest Rate (%)</TableHead>
+                  <TableHead>Duration (days)</TableHead>
+                  <TableHead>Total Debt</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {mockLendOffers.map((offer, index) => (
+                  <>
+                    <TableRow key={index}>
+                      <TableCell className="font-mono">{offer.lender}</TableCell>
+                      <TableCell>{offer.amount} ETH</TableCell>
+                      <TableCell>{offer.minInterestRate}%</TableCell>
+                      <TableCell>{offer.maxDuration}</TableCell>
+                      <TableCell>{offer.totalDebt} ETH</TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                          {offer.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-x-2">
+                          <Button
+                            onClick={() => setSelectedLoan(selectedLoan === offer ? null : offer)}
+                            variant="outline"
+                          >
+                            Manage
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                </>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    {selectedLoan === offer && (
+                      <TableRow>
+                        <TableCell colSpan={7}>
+                          <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+                            <div className="flex items-center space-x-4">
+                              <Input
+                                type="number"
+                                placeholder="Enter amount to repay"
+                                value={repaymentAmount}
+                                onChange={(e) => setRepaymentAmount(e.target.value)}
+                                className="max-w-xs"
+                              />
+                              <Button
+                                onClick={() => handleRepayment(offer, repaymentAmount)}
+                                variant="default"
+                              >
+                                Partial Repayment
+                              </Button>
+                              <Button
+                                onClick={() => handleRepayment(offer, offer.totalDebt.toString())}
+                                variant="default"
+                              >
+                                Repay Full Amount
+                              </Button>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Token</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockTransactions.map((tx) => (
-                <TableRow key={tx.id}>
-                  <TableCell>{tx.date.toLocaleDateString()}</TableCell>
-                  <TableCell>{tx.type}</TableCell>
-                  <TableCell>{tx.amount}</TableCell>
-                  <TableCell>{tx.token}</TableCell>
+        <Card>
+          <CardHeader>
+            <CardTitle>Transaction History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Token</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              </TableHeader>
+              <TableBody>
+                {mockTransactions.map((tx) => (
+                  <TableRow key={tx.id}>
+                    <TableCell>{tx.date.toLocaleDateString()}</TableCell>
+                    <TableCell>{tx.type}</TableCell>
+                    <TableCell>{tx.amount}</TableCell>
+                    <TableCell>{tx.token}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </WalletRequired>
   );
 };
 
