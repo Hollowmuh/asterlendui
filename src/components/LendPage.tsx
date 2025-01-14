@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
 import { BorrowRequest } from "@/types/loans";
+import { useState } from "react";
 
 // TODO: Replace with actual smart contract integration
 const mockBorrowRequests: BorrowRequest[] = [
@@ -12,7 +13,9 @@ const mockBorrowRequests: BorrowRequest[] = [
     maxInterestRate: 5,
     duration: 30,
     acceptedCollateralToken: "0xdef...789",
-    maxCollateralRatio: 150
+    maxCollateralRatio: 150,
+    dueDate: new Date(Date.now() + 86400000), // 24 hours from now
+    status: "active"
   },
   {
     borrower: "0x8765...4321",
@@ -20,12 +23,26 @@ const mockBorrowRequests: BorrowRequest[] = [
     maxInterestRate: 4,
     duration: 15,
     acceptedCollateralToken: "0xabc...123",
-    maxCollateralRatio: 130
+    maxCollateralRatio: 130,
+    dueDate: new Date(Date.now() - 86400000), // 24 hours ago (overdue)
+    status: "overdue"
   }
+];
+
+const mockTransactions = [
+  {
+    id: 1,
+    date: new Date(),
+    type: "payment",
+    amount: 100,
+    token: "ETH"
+  },
+  // Add more mock transactions as needed
 ];
 
 const LendPage = () => {
   const { toast } = useToast();
+  const [selectedLoan, setSelectedLoan] = useState<BorrowRequest | null>(null);
 
   // TODO: Implement actual smart contract interaction
   const handleMatch = async (request: BorrowRequest) => {
@@ -46,11 +63,31 @@ const LendPage = () => {
     }
   };
 
+  const handleAddGrace = async (loan: BorrowRequest) => {
+    // TODO: Implement smart contract interaction for adding grace period
+    toast({
+      title: "Adding Grace Period",
+      description: "Processing grace period extension...",
+    });
+  };
+
+  const handleLiquidate = async (loan: BorrowRequest) => {
+    // TODO: Implement smart contract interaction for liquidation
+    toast({
+      title: "Initiating Liquidation",
+      description: "Processing liquidation request...",
+    });
+  };
+
+  const isLoanOverdue = (dueDate: Date) => {
+    return new Date() > new Date(dueDate);
+  };
+
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Available Borrow Requests</CardTitle>
+          <CardTitle>Your Active Loans</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -58,11 +95,11 @@ const LendPage = () => {
               <TableRow>
                 <TableHead>Borrower</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Max Interest Rate (%)</TableHead>
+                <TableHead>Interest Rate (%)</TableHead>
                 <TableHead>Duration (days)</TableHead>
-                <TableHead>Collateral Token</TableHead>
-                <TableHead>Max Collateral Ratio (%)</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -72,18 +109,60 @@ const LendPage = () => {
                   <TableCell>{request.amount} ETH</TableCell>
                   <TableCell>{request.maxInterestRate}%</TableCell>
                   <TableCell>{request.duration}</TableCell>
-                  <TableCell className="font-mono">
-                    {request.acceptedCollateralToken}
-                  </TableCell>
-                  <TableCell>{request.maxCollateralRatio}%</TableCell>
+                  <TableCell>{request.dueDate.toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Button 
-                      onClick={() => handleMatch(request)}
-                      variant="default"
-                    >
-                      Match
-                    </Button>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      request.status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                    }`}>
+                      {request.status}
+                    </span>
                   </TableCell>
+                  <TableCell>
+                    <div className="space-x-2">
+                      <Button
+                        onClick={() => handleAddGrace(request)}
+                        variant="outline"
+                        disabled={!isLoanOverdue(request.dueDate)}
+                      >
+                        Add Grace
+                      </Button>
+                      <Button
+                        onClick={() => handleLiquidate(request)}
+                        variant="destructive"
+                        disabled={!isLoanOverdue(request.dueDate)}
+                      >
+                        Liquidate
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Token</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {mockTransactions.map((tx) => (
+                <TableRow key={tx.id}>
+                  <TableCell>{tx.date.toLocaleDateString()}</TableCell>
+                  <TableCell>{tx.type}</TableCell>
+                  <TableCell>{tx.amount}</TableCell>
+                  <TableCell>{tx.token}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

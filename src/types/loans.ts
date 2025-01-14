@@ -5,6 +5,8 @@ export interface LendOffer {
   maxDuration: number;
   acceptedCollateralTokens: string[];
   minCollateralRatio: number;
+  totalDebt?: number;
+  status?: string;
 }
 
 export interface BorrowRequest {
@@ -14,4 +16,6 @@ export interface BorrowRequest {
   duration: number;
   acceptedCollateralToken: string;
   maxCollateralRatio: number;
+  dueDate: Date;
+  status: string;
 }
