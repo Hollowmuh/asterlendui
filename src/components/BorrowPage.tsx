@@ -47,48 +47,50 @@ const BorrowPage = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Available Lending Offers</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Lender</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Min Interest Rate (%)</TableHead>
-              <TableHead>Max Duration (days)</TableHead>
-              <TableHead>Accepted Collateral</TableHead>
-              <TableHead>Min Collateral Ratio (%)</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockLendOffers.map((offer, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-mono">{offer.lender}</TableCell>
-                <TableCell>{offer.amount} ETH</TableCell>
-                <TableCell>{offer.minInterestRate}%</TableCell>
-                <TableCell>{offer.maxDuration}</TableCell>
-                <TableCell className="font-mono">
-                  {offer.acceptedCollateralTokens.join(", ")}
-                </TableCell>
-                <TableCell>{offer.minCollateralRatio}%</TableCell>
-                <TableCell>
-                  <Button 
-                    onClick={() => handleMatch(offer)}
-                    variant="default"
-                  >
-                    Match
-                  </Button>
-                </TableCell>
+    <div className="container mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Lending Offers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Lender</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Min Interest Rate (%)</TableHead>
+                <TableHead>Max Duration (days)</TableHead>
+                <TableHead>Accepted Collateral</TableHead>
+                <TableHead>Min Collateral Ratio (%)</TableHead>
+                <TableHead>Action</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {mockLendOffers.map((offer, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-mono">{offer.lender}</TableCell>
+                  <TableCell>{offer.amount} ETH</TableCell>
+                  <TableCell>{offer.minInterestRate}%</TableCell>
+                  <TableCell>{offer.maxDuration}</TableCell>
+                  <TableCell className="font-mono">
+                    {offer.acceptedCollateralTokens.join(", ")}
+                  </TableCell>
+                  <TableCell>{offer.minCollateralRatio}%</TableCell>
+                  <TableCell>
+                    <Button 
+                      onClick={() => handleMatch(offer)}
+                      variant="default"
+                    >
+                      Match
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

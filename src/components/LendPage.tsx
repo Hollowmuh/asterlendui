@@ -11,7 +11,7 @@ const mockBorrowRequests: BorrowRequest[] = [
     amount: 1000,
     maxInterestRate: 5,
     duration: 30,
-    acceptedCollateralToken: "0xabc...def",
+    acceptedCollateralToken: "0xdef...789",
     maxCollateralRatio: 150
   },
   {
@@ -19,7 +19,7 @@ const mockBorrowRequests: BorrowRequest[] = [
     amount: 500,
     maxInterestRate: 4,
     duration: 15,
-    acceptedCollateralToken: "0xfed...cba",
+    acceptedCollateralToken: "0xabc...123",
     maxCollateralRatio: 130
   }
 ];
@@ -32,61 +32,65 @@ const LendPage = () => {
     try {
       toast({
         title: "Processing loan match",
-        description: `Attempting to match loan request from ${request.borrower}`,
+        description: `Attempting to match borrow request from ${request.borrower}`,
       });
       // Contract interaction would go here
-      console.log("Matching loan request:", request);
+      console.log("Matching borrow request:", request);
     } catch (error) {
-      console.error("Error matching loan:", error);
+      console.error("Error matching request:", error);
       toast({
         title: "Error",
-        description: "Failed to match loan request. Please try again.",
+        description: "Failed to match borrow request. Please try again.",
         variant: "destructive",
       });
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Available Borrow Requests</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Borrower</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Max Interest Rate (%)</TableHead>
-              <TableHead>Duration (days)</TableHead>
-              <TableHead>Collateral Token</TableHead>
-              <TableHead>Max Collateral Ratio (%)</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockBorrowRequests.map((request, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-mono">{request.borrower}</TableCell>
-                <TableCell>{request.amount} ETH</TableCell>
-                <TableCell>{request.maxInterestRate}%</TableCell>
-                <TableCell>{request.duration}</TableCell>
-                <TableCell className="font-mono">{request.acceptedCollateralToken}</TableCell>
-                <TableCell>{request.maxCollateralRatio}%</TableCell>
-                <TableCell>
-                  <Button 
-                    onClick={() => handleMatch(request)}
-                    variant="default"
-                  >
-                    Match
-                  </Button>
-                </TableCell>
+    <div className="container mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Borrow Requests</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Borrower</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Max Interest Rate (%)</TableHead>
+                <TableHead>Duration (days)</TableHead>
+                <TableHead>Collateral Token</TableHead>
+                <TableHead>Max Collateral Ratio (%)</TableHead>
+                <TableHead>Action</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {mockBorrowRequests.map((request, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-mono">{request.borrower}</TableCell>
+                  <TableCell>{request.amount} ETH</TableCell>
+                  <TableCell>{request.maxInterestRate}%</TableCell>
+                  <TableCell>{request.duration}</TableCell>
+                  <TableCell className="font-mono">
+                    {request.acceptedCollateralToken}
+                  </TableCell>
+                  <TableCell>{request.maxCollateralRatio}%</TableCell>
+                  <TableCell>
+                    <Button 
+                      onClick={() => handleMatch(request)}
+                      variant="default"
+                    >
+                      Match
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
