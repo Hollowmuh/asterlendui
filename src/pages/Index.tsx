@@ -1,6 +1,8 @@
 import Navigation from "@/components/Navigation";
 import DashboardMetrics from "@/components/DashboardMetrics";
 import WalletConnect from "@/components/WalletConnect";
+import RecentActivity from "@/components/RecentActivity";
+import CurrentPositions from "@/components/CurrentPositions";
 
 const Index = () => {
   return (
@@ -22,12 +24,12 @@ const Index = () => {
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white/80 backdrop-blur-lg rounded-lg p-6 border border-gray-100">
               <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-              <p className="text-gray-600">No recent activity to display</p>
+              <RecentActivity />
             </div>
             
             <div className="bg-white/80 backdrop-blur-lg rounded-lg p-6 border border-gray-100">
               <h2 className="text-xl font-semibold mb-4">Your Positions</h2>
-              <p className="text-gray-600">No active positions</p>
+              <CurrentPositions />
             </div>
           </div>
         </div>
