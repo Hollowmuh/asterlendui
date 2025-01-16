@@ -3,7 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Activity, TrendingUp, Users, Wallet, Percent, AlertTriangle } from "lucide-react";
 
-const COLORS = ['#4ADE80', '#F87171', '#60A5FA', '#FBBF24', '#A78BFA', '#34D399'];
+// Updated color scheme for better readability and aesthetics
+const COLORS = [
+  '#8B5CF6', // Vivid Purple
+  '#F97316', // Bright Orange
+  '#0EA5E9', // Ocean Blue
+  '#10B981', // Emerald
+  '#EF4444', // Red
+  '#F59E0B'  // Amber
+];
 
 const AboutPage = () => {
   // TODO: Replace with actual smart contract call
@@ -33,17 +41,17 @@ const AboutPage = () => {
   ];
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <div className="container mx-auto p-6 space-y-8 animate-fadeIn">
       <h1 className="text-3xl font-bold mb-8">Project Statistics</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
-          { title: "Total Value Lent", value: `$${stats?.totalLent || "0"}`, icon: Wallet },
-          { title: "Total Value Borrowed", value: `$${stats?.totalBorrowed || "0"}`, icon: TrendingUp },
-          { title: "Active Loans", value: stats?.activeLoans || "0", icon: Activity },
-          { title: "Successful Repayments", value: stats?.successfulRepayments || "0", icon: Users },
-          { title: "Defaults", value: stats?.defaults || "0", icon: AlertTriangle },
-          { title: "Average Interest Rate", value: `${stats?.averageInterestRate || "0"}%`, icon: Percent }
+          { title: "Total Value Lent", value: `$${stats?.totalLent || "0"}`, icon: Wallet, color: COLORS[0] },
+          { title: "Total Value Borrowed", value: `$${stats?.totalBorrowed || "0"}`, icon: TrendingUp, color: COLORS[1] },
+          { title: "Active Loans", value: stats?.activeLoans || "0", icon: Activity, color: COLORS[2] },
+          { title: "Successful Repayments", value: stats?.successfulRepayments || "0", icon: Users, color: COLORS[3] },
+          { title: "Defaults", value: stats?.defaults || "0", icon: AlertTriangle, color: COLORS[4] },
+          { title: "Average Interest Rate", value: `${stats?.averageInterestRate || "0"}%`, icon: Percent, color: COLORS[5] }
         ].map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -52,10 +60,10 @@ const AboutPage = () => {
                 <CardTitle className="text-sm font-medium">
                   {stat.title}
                 </CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <Icon className="h-4 w-4" style={{ color: stat.color }} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
               </CardContent>
             </Card>
           );
@@ -81,10 +89,21 @@ const AboutPage = () => {
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]}
+                      className="hover:opacity-80 transition-opacity"
+                    />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    border: '1px solid #ccc',
+                    borderRadius: '8px',
+                    padding: '10px'
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
