@@ -1,5 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useWallet } from "@/contexts/WalletContext";
+import WalletConnect from "./WalletConnect";
 
 // TODO: Replace with actual smart contract integration
 const mockTransactions = [
@@ -20,32 +22,25 @@ const mockTransactions = [
     interest: "50",
     status: "active",
     timestamp: "2024-01-13T15:30:00Z"
-  },
-  {
-    id: 3,
-    type: "lend",
-    amount: "10000",
-    token: "USDT",
-    interest: "500",
-    status: "defaulted",
-    timestamp: "2024-01-12T09:15:00Z"
   }
 ];
 
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'completed':
-      return 'bg-green-100 text-green-800';
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
     case 'defaulted':
-      return 'bg-red-100 text-red-800';
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
     case 'liquidated':
-      return 'bg-orange-100 text-orange-800';
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
     default:
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
   }
 };
 
 const RecentActivity = () => {
+  const { isConnected } = useWallet();
+
   // TODO: Implement contract call to fetch recent transactions
   // const fetchTransactions = async () => {
   //   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -53,6 +48,15 @@ const RecentActivity = () => {
   //   const transactions = await contract.getUserTransactions(address);
   //   return transactions;
   // };
+
+  if (!isConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-4 bg-accent/10 rounded-lg">
+        <p className="text-muted-foreground">Connect your wallet to view your recent activity</p>
+        <WalletConnect />
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden">
@@ -66,7 +70,7 @@ const RecentActivity = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockTransactions.slice(0, 5).map((tx) => (
+          {mockTransactions.map((tx) => (
             <TableRow key={tx.id}>
               <TableCell>
                 <Badge variant={tx.type === 'lend' ? 'default' : 'secondary'}>

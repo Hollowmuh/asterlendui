@@ -1,5 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useWallet } from "@/contexts/WalletContext";
+import WalletConnect from "./WalletConnect";
 
 // TODO: Replace with actual smart contract integration
 const mockPositions = [
@@ -22,6 +24,8 @@ const mockPositions = [
 ];
 
 const CurrentPositions = () => {
+  const { isConnected } = useWallet();
+
   // TODO: Implement contract call to fetch current positions
   // const fetchPositions = async () => {
   //   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -29,6 +33,15 @@ const CurrentPositions = () => {
   //   const positions = await contract.getUserPositions(address);
   //   return positions;
   // };
+
+  if (!isConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-4 bg-accent/10 rounded-lg">
+        <p className="text-muted-foreground">Connect your wallet to view your positions</p>
+        <WalletConnect />
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden">
