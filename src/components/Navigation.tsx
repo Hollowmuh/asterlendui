@@ -12,6 +12,8 @@ import {
   Sun
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import WalletDisplay from "./WalletDisplay";
+import { Button } from "./ui/button";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -35,12 +37,17 @@ const Navigation = () => {
         >
           {isOpen ? <X size={16} /> : <Menu size={16} />}
         </button>
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-lg hover:bg-accent"
-        >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="rounded-lg"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </Button>
+          {isOpen && <WalletDisplay />}
+        </div>
       </div>
       
       <div className="p-6">
