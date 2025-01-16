@@ -1,8 +1,29 @@
 import { useToast } from "@/components/ui/use-toast";
-import { BorrowRequest } from "@/types/loans";
+import { BorrowRequest, LendOffer } from "@/types/loans";
 import { useState } from "react";
 import ActiveLoans from "./lend/ActiveLoans";
 import TransactionHistory from "./lend/TransactionHistory";
+import LendingListings from "./lend/LendingListings";
+
+// Mock data for lending listings
+const mockLendOffers: LendOffer[] = [
+  {
+    lender: "0x1234...5678",
+    amount: 1000,
+    minInterestRate: 5,
+    maxDuration: 30,
+    acceptedCollateralTokens: ["ETH", "WBTC", "USDC"],
+    minCollateralRatio: 150,
+  },
+  {
+    lender: "0x8765...4321",
+    amount: 500,
+    minInterestRate: 4,
+    maxDuration: 15,
+    acceptedCollateralTokens: ["ETH", "USDC"],
+    minCollateralRatio: 130,
+  }
+];
 
 const mockBorrowRequests: BorrowRequest[] = [
   {
@@ -63,6 +84,7 @@ const LendPage = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <LendingListings listings={mockLendOffers} />
       <ActiveLoans 
         loans={mockBorrowRequests}
         onAddGrace={handleAddGrace}
