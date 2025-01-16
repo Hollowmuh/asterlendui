@@ -18,4 +18,6 @@ export interface BorrowRequest {
   maxCollateralRatio: number;
   dueDate: Date;
   status: string;
+  loanType: 'lent' | 'borrowed';  // New field
+  totalAmountOwed?: number;  // For borrowed loans
 }

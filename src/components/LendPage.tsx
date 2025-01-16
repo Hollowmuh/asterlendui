@@ -13,7 +13,9 @@ const mockBorrowRequests: BorrowRequest[] = [
     acceptedCollateralToken: "0xdef...789",
     maxCollateralRatio: 150,
     dueDate: new Date(Date.now() + 86400000), // 24 hours from now
-    status: "active"
+    status: "active",
+    loanType: "lent",
+    totalAmountOwed: 1050 // Including interest
   },
   {
     borrower: "0x8765...4321",
@@ -23,7 +25,9 @@ const mockBorrowRequests: BorrowRequest[] = [
     acceptedCollateralToken: "0xabc...123",
     maxCollateralRatio: 130,
     dueDate: new Date(Date.now() - 86400000), // 24 hours ago (overdue)
-    status: "overdue"
+    status: "overdue",
+    loanType: "borrowed",
+    totalAmountOwed: 520 // Including interest
   }
 ];
 
