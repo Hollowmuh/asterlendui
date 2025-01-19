@@ -2,76 +2,84 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { LendOffer } from "@/types/loans";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BorrowerListingDetails } from "@/types/loans";
 import WalletRequired from "./WalletRequired";
 
 // TODO: Replace with actual smart contract integration
-const mockLendOffers: LendOffer[] = [
+const mockBorrowerListings: BorrowerListingDetails[] = [
   {
-    lender: "0x9876...5432",
-    amount: 2000,
-    minInterestRate: 3,
-    maxDuration: 45,
-    acceptedCollateralTokens: ["0xabc...def", "0x123...456"],
-    minCollateralRatio: 120,
-    totalDebt: 2200,
-    status: "active"
+    id: "1",
+    borrower: "0x1234...5678",
+    requestedAmount: 1000,
+    maxInterestRate: 5,
+    desiredDuration: 30,
+    collateralToken: "ETH",
+    collateralAmount: 0.5,
+    status: "active",
+    createdAt: new Date()
   },
   {
-    lender: "0x5432...9876",
-    amount: 1500,
-    minInterestRate: 4,
-    maxDuration: 30,
-    acceptedCollateralTokens: ["0xfed...cba"],
-    minCollateralRatio: 140,
-    totalDebt: 1650,
-    status: "active"
+    id: "2",
+    borrower: "0x8765...4321",
+    requestedAmount: 2000,
+    maxInterestRate: 7,
+    desiredDuration: 60,
+    collateralToken: "WBTC",
+    collateralAmount: 0.1,
+    status: "active",
+    createdAt: new Date()
   }
-];
-
-const mockTransactions = [
-  {
-    id: 1,
-    date: new Date(),
-    type: "borrow",
-    amount: 1500,
-    token: "ETH"
-  },
-  // Add more mock transactions as needed
 ];
 
 const BorrowPage = () => {
   const { toast } = useToast();
-  const [selectedLoan, setSelectedLoan] = useState<LendOffer | null>(null);
-  const [repaymentAmount, setRepaymentAmount] = useState<string>("");
+  const [newListing, setNewListing] = useState({
+    requestedAmount: "",
+    maxInterestRate: "",
+    desiredDuration: "",
+    collateralToken: "",
+    collateralAmount: ""
+  });
 
-  // TODO: Implement actual smart contract interaction
-  const handleMatch = async (offer: LendOffer) => {
+  // TODO: Implement actual smart contract interaction for creating listing
+  const handleCreateListing = async () => {
     try {
       toast({
-        title: "Processing loan match",
-        description: `Attempting to match loan offer from ${offer.lender}`,
+        title: "Creating Borrow Request",
+        description: "Processing your borrow request...",
       });
       // Contract interaction would go here
-      console.log("Matching loan offer:", offer);
+      console.log("Creating borrow listing:", newListing);
     } catch (error) {
-      console.error("Error matching loan:", error);
+      console.error("Error creating listing:", error);
       toast({
         title: "Error",
-        description: "Failed to match loan offer. Please try again.",
+        description: "Failed to create borrow request. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const handleRepayment = async (loan: LendOffer, amount: string) => {
-    // TODO: Implement smart contract interaction for loan repayment
-    toast({
-      title: "Processing Repayment",
-      description: `Attempting to repay ${amount} ETH`,
-    });
+  // TODO: Implement actual smart contract interaction for cancelling listing
+  const handleCancelListing = async (listingId: string) => {
+    try {
+      toast({
+        title: "Cancelling Request",
+        description: "Processing cancellation...",
+      });
+      console.log("Cancelling listing:", listingId);
+    } catch (error) {
+      console.error("Error cancelling listing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -79,103 +87,113 @@ const BorrowPage = () => {
       <div className="container mx-auto p-6 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Your Active Loans</CardTitle>
+            <CardTitle>Create Borrow Request</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Lender</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Interest Rate (%)</TableHead>
-                  <TableHead>Duration (days)</TableHead>
-                  <TableHead>Total Debt</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockLendOffers.map((offer, index) => (
-                  <>
-                    <TableRow key={index}>
-                      <TableCell className="font-mono">{offer.lender}</TableCell>
-                      <TableCell>{offer.amount} ETH</TableCell>
-                      <TableCell>{offer.minInterestRate}%</TableCell>
-                      <TableCell>{offer.maxDuration}</TableCell>
-                      <TableCell>{offer.totalDebt} ETH</TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                          {offer.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-x-2">
-                          <Button
-                            onClick={() => setSelectedLoan(selectedLoan === offer ? null : offer)}
-                            variant="outline"
-                          >
-                            Manage
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {selectedLoan === offer && (
-                      <TableRow>
-                        <TableCell colSpan={7}>
-                          <div className="p-4 bg-gray-50 rounded-lg space-y-4">
-                            <div className="flex items-center space-x-4">
-                              <Input
-                                type="number"
-                                placeholder="Enter amount to repay"
-                                value={repaymentAmount}
-                                onChange={(e) => setRepaymentAmount(e.target.value)}
-                                className="max-w-xs"
-                              />
-                              <Button
-                                onClick={() => handleRepayment(offer, repaymentAmount)}
-                                variant="default"
-                              >
-                                Partial Repayment
-                              </Button>
-                              <Button
-                                onClick={() => handleRepayment(offer, offer.totalDebt.toString())}
-                                variant="default"
-                              >
-                                Repay Full Amount
-                              </Button>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label>Loan Amount Requested</label>
+                <Input
+                  type="number"
+                  value={newListing.requestedAmount}
+                  onChange={(e) => setNewListing({ ...newListing, requestedAmount: e.target.value })}
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div className="space-y-2">
+                <label>Maximum Interest Rate (%)</label>
+                <Input
+                  type="number"
+                  max={30}
+                  value={newListing.maxInterestRate}
+                  onChange={(e) => setNewListing({ ...newListing, maxInterestRate: e.target.value })}
+                  placeholder="Max 30%"
+                />
+              </div>
+              <div className="space-y-2">
+                <label>Desired Loan Duration (days)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={newListing.desiredDuration}
+                  onChange={(e) => setNewListing({ ...newListing, desiredDuration: e.target.value })}
+                  placeholder="1-365 days"
+                />
+              </div>
+              <div className="space-y-2">
+                <label>Collateral Token</label>
+                <Select
+                  value={newListing.collateralToken}
+                  onValueChange={(value) => setNewListing({ ...newListing, collateralToken: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select token" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ETH">ETH</SelectItem>
+                    <SelectItem value="WBTC">WBTC</SelectItem>
+                    <SelectItem value="USDC">USDC</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label>Collateral Amount</label>
+                <Input
+                  type="number"
+                  value={newListing.collateralAmount}
+                  onChange={(e) => setNewListing({ ...newListing, collateralAmount: e.target.value })}
+                  placeholder="Enter collateral amount"
+                />
+              </div>
+            </div>
+            <Button onClick={handleCreateListing} className="mt-4">
+              Create Borrow Request
+            </Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Transaction History</CardTitle>
+            <CardTitle>Active Borrow Requests</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead>Borrower</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Token</TableHead>
+                  <TableHead>Max Interest</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Collateral</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockTransactions.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell>{tx.date.toLocaleDateString()}</TableCell>
-                    <TableCell>{tx.type}</TableCell>
-                    <TableCell>{tx.amount}</TableCell>
-                    <TableCell>{tx.token}</TableCell>
+                {mockBorrowerListings.map((listing) => (
+                  <TableRow key={listing.id}>
+                    <TableCell className="font-mono">{listing.borrower}</TableCell>
+                    <TableCell>{listing.requestedAmount} USDC</TableCell>
+                    <TableCell>{listing.maxInterestRate}%</TableCell>
+                    <TableCell>{listing.desiredDuration} days</TableCell>
+                    <TableCell>
+                      {listing.collateralAmount} {listing.collateralToken}
+                    </TableCell>
+                    <TableCell>
+                      <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        {listing.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => handleCancelListing(listing.id)}
+                        variant="destructive"
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

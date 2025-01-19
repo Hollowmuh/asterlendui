@@ -21,3 +21,15 @@ export interface BorrowRequest {
   loanType: 'lent' | 'borrowed';
   totalAmountOwed?: number;
 }
+
+export interface BorrowerListingDetails {
+  id: string;
+  borrower: string;
+  requestedAmount: number;
+  maxInterestRate: number;
+  desiredDuration: number;
+  collateralToken: string;
+  collateralAmount: number;
+  status: 'active' | 'cancelled' | 'matched';
+  createdAt: Date;
+}
