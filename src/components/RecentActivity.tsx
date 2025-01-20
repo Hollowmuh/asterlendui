@@ -2,6 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { WalletConnect } from "./WalletConnect";
 import { useAccount, useDisconnect } from 'wagmi';
+import Navigation from "./Navigation";
 
 // TODO: Replace with actual smart contract integration
 const mockTransactions = [
@@ -60,6 +61,7 @@ const RecentActivity = () => {
 
   return (
     <div className="overflow-hidden">
+      <Navigation />
       <Table>
         <TableHeader>
           <TableRow>

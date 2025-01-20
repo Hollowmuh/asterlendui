@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "./ui/button";
+import BrandLogo from "./BrandLogo"
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -50,10 +51,12 @@ const Navigation = () => {
       </div>
       
       <div className="p-6">
-        <h1 className={`text-2xl font-bold mb-8 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
-          LendingPool
-        </h1>
+        <BrandLogo 
+  size="small" 
+  className={`transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}/>
+
         
+        <div className="mt-6">
         <nav className="space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -76,7 +79,8 @@ const Navigation = () => {
               </Link>
             );
           })}
-        </nav>
+          </nav>
+          </div>
       </div>
     </div>
   );

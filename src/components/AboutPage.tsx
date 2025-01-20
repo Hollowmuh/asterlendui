@@ -1,126 +1,9 @@
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { useQuery } from "@tanstack/react-query";
-// import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-// import { Activity, TrendingUp, Users, Wallet, Percent, AlertTriangle } from "lucide-react";
-
-// // Updated color scheme for better readability and aesthetics
-// const COLORS = [
-//   '#8B5CF6', // Vivid Purple
-//   '#F97316', // Bright Orange
-//   '#0EA5E9', // Ocean Blue
-//   '#10B981', // Emerald
-//   '#EF4444', // Red
-//   '#F59E0B'  // Amber
-// ];
-
-// const AboutPage = () => {
-//   // TODO: Replace with actual smart contract call
-//   const { data: stats } = useQuery({
-//     queryKey: ['projectStats'],
-//     queryFn: async () => {
-//       // const provider = new ethers.providers.Web3Provider(window.ethereum);
-//       // const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
-//       // const stats = await contract.getProjectStats();
-//       return {
-//         totalLent: "1000000",
-//         totalBorrowed: "800000",
-//         activeLoans: "150",
-//         successfulRepayments: "450",
-//         defaults: "20",
-//         averageInterestRate: "4.5"
-//       };
-//     }
-//   });
-
-//   const pieData = [
-//     { name: 'Total Lent', value: parseInt(stats?.totalLent || '0') },
-//     { name: 'Total Borrowed', value: parseInt(stats?.totalBorrowed || '0') },
-//     { name: 'Active Loans', value: parseInt(stats?.activeLoans || '0') * 1000 },
-//     { name: 'Successful Repayments', value: parseInt(stats?.successfulRepayments || '0') * 1000 },
-//     { name: 'Defaults', value: parseInt(stats?.defaults || '0') * 1000 },
-//   ];
-
-//   return (
-//     <div className="container mx-auto p-6 space-y-8 animate-fadeIn">
-//       <h1 className="text-3xl font-bold mb-8">Project Statistics</h1>
-      
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//         {[
-//           { title: "Total Value Lent", value: `$${stats?.totalLent || "0"}`, icon: Wallet, color: COLORS[0] },
-//           { title: "Total Value Borrowed", value: `$${stats?.totalBorrowed || "0"}`, icon: TrendingUp, color: COLORS[1] },
-//           { title: "Active Loans", value: stats?.activeLoans || "0", icon: Activity, color: COLORS[2] },
-//           { title: "Successful Repayments", value: stats?.successfulRepayments || "0", icon: Users, color: COLORS[3] },
-//           { title: "Defaults", value: stats?.defaults || "0", icon: AlertTriangle, color: COLORS[4] },
-//           { title: "Average Interest Rate", value: `${stats?.averageInterestRate || "0"}%`, icon: Percent, color: COLORS[5] }
-//         ].map((stat, index) => {
-//           const Icon = stat.icon;
-//           return (
-//             <Card key={index} className="transition-all duration-300 hover:shadow-lg dark:bg-gray-800">
-//               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//                 <CardTitle className="text-sm font-medium">
-//                   {stat.title}
-//                 </CardTitle>
-//                 <Icon className="h-4 w-4" style={{ color: stat.color }} />
-//               </CardHeader>
-//               <CardContent>
-//                 <div className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
-//               </CardContent>
-//             </Card>
-//           );
-//         })}
-//       </div>
-
-//       <Card className="mt-8 p-6 dark:bg-gray-800">
-//         <CardHeader>
-//           <CardTitle>Distribution Overview</CardTitle>
-//         </CardHeader>
-//         <CardContent>
-//           <div className="h-[400px] w-full">
-//             <ResponsiveContainer width="100%" height="100%">
-//               <PieChart>
-//                 <Pie
-//                   data={pieData}
-//                   cx="50%"
-//                   cy="50%"
-//                   labelLine={false}
-//                   outerRadius={150}
-//                   fill="#8884d8"
-//                   dataKey="value"
-//                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-//                 >
-//                   {pieData.map((entry, index) => (
-//                     <Cell 
-//                       key={`cell-${index}`} 
-//                       fill={COLORS[index % COLORS.length]}
-//                       className="hover:opacity-80 transition-opacity"
-//                     />
-//                   ))}
-//                 </Pie>
-//                 <Tooltip 
-//                   contentStyle={{ 
-//                     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-//                     border: '1px solid #ccc',
-//                     borderRadius: '8px',
-//                     padding: '10px'
-//                   }}
-//                 />
-//               </PieChart>
-//             </ResponsiveContainer>
-//           </div>
-//         </CardContent>
-//       </Card>
-//     </div>
-//   );
-// };
-
-// export default AboutPage;
-
-
+import Navigation from "@/components/Navigation";
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Activity, TrendingUp, Users, Wallet, Percent, AlertTriangle, ChevronDown } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Activity, TrendingUp, Users, Wallet, Percent, AlertTriangle, Shield, Clock, Target } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -129,27 +12,14 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const COLORS = {
-  primary: '#8B5CF6',
-  secondary: '#F97316',
-  accent: '#0EA5E9',
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  background: {
-    light: '#F8FAFC',
-    dark: '#1E293B'
-  },
-  gradient: {
-    start: '#C084FC',
-    end: '#818CF8'
-  }
-};
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import BrandLogo from '@/components/BrandLogo';
 
 const AboutPage = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-
   const { data: stats } = useQuery({
     queryKey: ['projectStats'],
     queryFn: async () => {
@@ -161,71 +31,88 @@ const AboutPage = () => {
         defaults: "20",
         averageInterestRate: "4.5",
         platformUsers: "2500",
-        averageLoanDuration: "180"
+        averageLoanDuration: "180",
+        customerSatisfaction: "95",
+        totalTransactions: "3500"
       };
     }
   });
 
-  const pieData = [
-    { name: 'Total Lent', value: parseInt(stats?.totalLent || '0') },
-    { name: 'Total Borrowed', value: parseInt(stats?.totalBorrowed || '0') },
-    { name: 'Active Loans', value: parseInt(stats?.activeLoans || '0') * 1000 },
-    { name: 'Successful Repayments', value: parseInt(stats?.successfulRepayments || '0') * 1000 },
-    { name: 'Defaults', value: parseInt(stats?.defaults || '0') * 1000 },
+  const monthlyData = [
+    { month: 'Jan', loans: 120, volume: 95000 },
+    { month: 'Feb', loans: 150, volume: 125000 },
+    { month: 'Mar', loans: 180, volume: 150000 },
+    { month: 'Apr', loans: 220, volume: 180000 },
+    { month: 'May', loans: 250, volume: 200000 },
+    { month: 'Jun', loans: 280, volume: 230000 },
   ];
 
-  const faqs = [
+  const features = [
     {
-      question: "How does the lending process work?",
-      answer: "Our platform connects lenders with borrowers through a secure smart contract system. Lenders can provide funds, which are then matched with qualified borrowers. All transactions are recorded on the blockchain for transparency and security."
+      title: "Secure Lending",
+      icon: Shield,
+      description: "State-of-the-art encryption and blockchain technology ensuring your investments are safe."
     },
     {
-      question: "What are the interest rates?",
-      answer: "Interest rates vary based on multiple factors including loan duration, borrower credit score, and market conditions. Our current average interest rate is 4.5%, with rates typically ranging from 3% to 8%."
+      title: "Quick Processing",
+      icon: Clock,
+      description: "Fast loan processing and disbursement with automated smart contracts."
     },
     {
-      question: "How is my investment protected?",
-      answer: "We implement multiple security measures including smart contract audits, collateral requirements, and insurance pools. Additionally, our risk assessment algorithm helps maintain a low default rate."
+      title: "High Returns",
+      icon: Target,
+      description: "Competitive interest rates and optimized return on investment."
+    }
+  ];
+
+  const teamMembers = [
+    {
+      name: "Eng. Mubarak",
+      role: "Chief Executive Officer",
+      bio: "15+ years in FinTech and blockchain technology"
     },
     {
-      question: "What happens in case of defaults?",
-      answer: "In case of defaults, our platform's insurance pool covers a portion of the losses. We also work with collection agencies to recover the funds while maintaining compliance with regulations."
+      name: "Whisphers",
+      role: "Chief Operation Officer",
+      bio: "Former lead developer at major cryptocurrency exchanges"
+    },
+    {
+      name: "0xShorwonor",
+      role: "Head of Risk Management",
+      bio: "Expert in DeFi protocols and risk assessment"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background-50 to-background-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto p-6 space-y-8 animate-fadeIn">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Platform Overview
-          </h1>
-          <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-            Empowering financial freedom through secure, transparent, and efficient lending
-          </p>
-        </div>
+    <div className="min-h-screen bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))] from-blue-100 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900">
+      <Navigation />
+      {/* Hero Section */}
+      <div className="w-full py-20 px-4 text-center bg-gradient-to-b from-transparent to-white/10">
+  <div className="flex justify-center mb-8">
+    <BrandLogo size="large" />
+  </div>
+        <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
+          Revolutionizing DeFi Lending
+        </h2>
+        <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
+          Building the future of decentralized finance through secure, transparent, and efficient lending solutions
+        </p>
+      </div>
 
-        <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="stats">Statistics</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="faq">FAQ</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                { title: "Total Value Lent", value: `$${stats?.totalLent || "0"}`, icon: Wallet, color: COLORS.primary },
-                { title: "Total Value Borrowed", value: `$${stats?.totalBorrowed || "0"}`, icon: TrendingUp, color: COLORS.secondary },
-                { title: "Active Loans", value: stats?.activeLoans || "0", icon: Activity, color: COLORS.accent },
-                { title: "Successful Repayments", value: stats?.successfulRepayments || "0", icon: Users, color: COLORS.success },
-                { title: "Platform Users", value: stats?.platformUsers || "0", icon: Users, color: COLORS.warning },
-                { title: "Average Loan Duration", value: `${stats?.averageLoanDuration || "0"} days`, icon: Activity, color: COLORS.error }
-              ].map((stat, index) => {
-                const Icon = stat.icon;
-                return (
-                  <Card key={index} className="transform transition-all duration-300 hover:scale-105 hover:shadow-xl dark:bg-gray-800/50 backdrop-blur-lg">
+      <div className="container mx-auto ml-20 lg:ml-64 p-6 space-y-12">
+        {/* Main Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { title: "Total Value Locked", value: `$${stats?.totalLent || "0"}`, icon: Wallet, color: "#8B5CF6" },
+            { title: "Platform Users", value: stats?.platformUsers || "0", icon: Users, color: "#0EA5E9" },
+            { title: "Total Transactions", value: stats?.totalTransactions || "0", icon: Activity, color: "#10B981" },
+            { title: "Customer Satisfaction", value: `${stats?.customerSatisfaction || "0"}%`, icon: Target, color: "#F97316" }
+          ].map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <HoverCard key={index}>
+                <HoverCardTrigger>
+                  <Card className="transform transition-all duration-300 hover:scale-105 hover:shadow-xl bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm border border-purple-100 dark:border-purple-900">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">
                         {stat.title}
@@ -236,72 +123,83 @@ const AboutPage = () => {
                       <div className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
                     </CardContent>
                   </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">{stat.title} Explained</h4>
+                    <p className="text-sm">
+                      Track our platform's growth and success through this key metric.
+                    </p>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+            );
+          })}
+        </div>
 
-          <TabsContent value="stats">
-            <Card className="dark:bg-gray-800/50 backdrop-blur-lg">
+        {/* Features Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-12">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <Card key={index} className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm border border-purple-100 dark:border-purple-900">
+                <CardHeader>
+                  <Icon className="h-8 w-8 mb-4 text-blue-600" />
+                  <CardTitle>{feature.title}</CardTitle>
+                  <CardDescription>{feature.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Performance Metrics */}
+        <Tabs defaultValue="overview" className="space-y-8">
+          <TabsList className="grid w-full grid-cols-3 lg:max-w-[400px] mx-auto bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="stats">Statistics</TabsTrigger>
+            <TabsTrigger value="projections">Projections</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <Card className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle>Distribution Overview</CardTitle>
+                <CardTitle>Monthly Performance</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[400px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={150}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={Object.values(COLORS)[index]}
-                            className="hover:opacity-80 transition-opacity"
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                          border: '1px solid #ccc',
-                          borderRadius: '8px',
-                          padding: '10px'
-                        }}
-                      />
-                    </PieChart>
+                    <BarChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="loans" fill="#8B5CF6" />
+                      <Bar dataKey="volume" fill="#0EA5E9" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="performance">
-            <Card className="dark:bg-gray-800/50 backdrop-blur-lg">
+          <TabsContent value="stats">
+            <Card className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle>Platform Performance</CardTitle>
+                <CardTitle>Key Metrics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Success Metrics</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      With a {((parseInt(stats?.successfulRepayments || '0') / (parseInt(stats?.successfulRepayments || '0') + parseInt(stats?.defaults || '0'))) * 100).toFixed(1)}% repayment rate, 
-                      our platform demonstrates strong performance in risk management and borrower selection.
+                  <div>
+                    <h3 className="font-semibold mb-2">Success Rate</h3>
+                    <p className="text-2xl font-bold text-green-600">
+                      {((parseInt(stats?.successfulRepayments || '0') / (parseInt(stats?.successfulRepayments || '0') + parseInt(stats?.defaults || '0'))) * 100).toFixed(1)}%
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Risk Management</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Our advanced risk assessment algorithms and strict collateral requirements help maintain 
-                      a low default rate of {((parseInt(stats?.defaults || '0') / parseInt(stats?.activeLoans || '1')) * 100).toFixed(1)}%.
+                  <div>
+                    <h3 className="font-semibold mb-2">Average Loan Duration</h3>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {stats?.averageLoanDuration} days
                     </p>
                   </div>
                 </div>
@@ -309,36 +207,98 @@ const AboutPage = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="faq">
-            <Card className="dark:bg-gray-800/50 backdrop-blur-lg">
+          <TabsContent value="projections">
+            <Card className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle>Frequently Asked Questions</CardTitle>
+                <CardTitle>Growth Projections</CardTitle>
               </CardHeader>
               <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-                  {faqs.map((faq, index) => (
-                    <AccordionItem key={index} value={`item-${index}`}>
-                      <AccordionTrigger>{faq.question}</AccordionTrigger>
-                      <AccordionContent>{faq.answer}</AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
+                <div className="space-y-4">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Based on current trends, we project continued growth in both user base and total value locked.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/50 rounded-lg">
+                      <h4 className="font-semibold">Q4 2024 Projection</h4>
+                      <p className="text-lg font-bold text-blue-600">$2.5M TVL</p>
+                    </div>
+                    <div className="p-4 bg-purple-50 dark:bg-purple-900/50 rounded-lg">
+                      <h4 className="font-semibold">User Growth</h4>
+                      <p className="text-lg font-bold text-purple-600">+150% YoY</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
 
-        <Card className="mt-8 dark:bg-gray-800/50 backdrop-blur-lg">
+        {/* Team Section */}
+        <div className="py-12">
+          <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Our Team
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {teamMembers.map((member, index) => (
+              <Card key={index} className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm border border-purple-100 dark:border-purple-900">
+                <CardHeader>
+                  <CardTitle className="text-xl">{member.name}</CardTitle>
+                  <CardDescription className="text-blue-600 dark:text-blue-400">{member.role}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 dark:text-gray-300">{member.bio}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <Card className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm border border-purple-100 dark:border-purple-900">
           <CardHeader>
-            <CardTitle>Get Started Today</CardTitle>
+            <CardTitle>Frequently Asked Questions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="item-1">
+                <AccordionTrigger>How does the lending process work?</AccordionTrigger>
+                <AccordionContent>
+                  Our platform uses smart contracts to facilitate peer-to-peer lending. Lenders can provide liquidity to the pool, 
+                  and borrowers can take loans against collateral. All transactions are recorded on the blockchain for maximum transparency.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-2">
+                <AccordionTrigger>What are the interest rates?</AccordionTrigger>
+                <AccordionContent>
+                  Interest rates are dynamically adjusted based on market conditions, typically ranging from 3% to 8% APY. 
+                  The current average rate is {stats?.averageInterestRate}%.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-3">
+                <AccordionTrigger>How is my investment protected?</AccordionTrigger>
+                <AccordionContent>
+                  We implement multiple security measures including smart contract audits, collateral requirements, and insurance pools. 
+                  Our risk assessment algorithm helps maintain a low default rate of only {((parseInt(stats?.defaults || '0') / parseInt(stats?.activeLoans || '1')) * 100).toFixed(1)}%.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+
+        {/* CTA Section */}
+        <Card className="mt-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <CardHeader>
+            <CardTitle className="text-center text-2xl">Ready to Start?</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="mb-6 text-gray-600 dark:text-gray-300">
+            <p className="mb-6">
               Join thousands of users already benefiting from our secure lending platform
             </p>
             <div className="flex justify-center gap-4">
-              <Button className="bg-primary hover:bg-primary/90">Start Lending</Button>
-              <Button variant="outline">Learn More</Button>
+              <Button className="bg-white text-blue-600 hover:bg-gray-100">Start Lending</Button>
+              <Button variant="outline" className="border-white text-white hover:bg-white/20">
+                Learn More
+              </Button>
             </div>
           </CardContent>
         </Card>
