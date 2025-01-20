@@ -14,6 +14,7 @@ import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { createAppKit }  from "@reown/appkit/react";
 import { type AppKitNetwork } from '@reown/appkit/networks';
 import CurrentPositions from "./components/CurrentPositions";
+import LoansPage from "./components/loansPage";
 
 const queryClient = new QueryClient();
 const projectId = '612505aa4c4b5494c81fcf295bc5b512';
@@ -62,7 +63,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/lend" element={<LendPage />} />
               <Route path="/borrow" element={<BorrowPage />} />
-              <Route path="/loans" element={<CurrentPositions />} />
+              <Route path="/loans" element={<LoansPage />} />
               <Route path="/about" element={<AboutPage />} />
             </Routes>
           </BrowserRouter>

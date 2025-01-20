@@ -50,14 +50,7 @@ const RecentActivity = () => {
   //   return transactions;
   // };
 
-  if (!isConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 space-y-4 bg-accent/10 rounded-lg">
-        <p className="text-muted-foreground">Connect your wallet to view your recent activity</p>
-        <WalletConnect />
-      </div>
-    );
-  }
+
 
   return (
     <div className="overflow-hidden">
