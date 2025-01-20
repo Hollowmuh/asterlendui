@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useWallet } from "@/contexts/WalletContext";
-import WalletConnect from "./WalletConnect";
+import { WalletConnect } from "./WalletConnect";
+import { useAccount, useDisconnect } from 'wagmi';
 
 // TODO: Replace with actual smart contract integration
 const mockPositions = [
@@ -24,7 +24,7 @@ const mockPositions = [
 ];
 
 const CurrentPositions = () => {
-  const { isConnected } = useWallet();
+  const { isConnected } = useAccount();
 
   // TODO: Implement contract call to fetch current positions
   // const fetchPositions = async () => {

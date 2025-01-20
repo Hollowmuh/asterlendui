@@ -1,6 +1,6 @@
 import Navigation from "@/components/Navigation";
 import DashboardMetrics from "@/components/DashboardMetrics";
-import WalletConnect from "@/components/WalletConnect";
+import {WalletConnect} from "@/components/WalletConnect";
 import RecentActivity from "@/components/RecentActivity";
 import CurrentPositions from "@/components/CurrentPositions";
 

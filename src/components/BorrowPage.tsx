@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BorrowerListingDetails } from "@/types/loans";
-import WalletRequired from "./WalletRequired";
 
 // TODO: Replace with actual smart contract integration
 const mockBorrowerListings: BorrowerListingDetails[] = [
@@ -83,7 +82,6 @@ const BorrowPage = () => {
   };
 
   return (
-    <WalletRequired>
       <div className="container mx-auto p-6 space-y-6">
         <Card>
           <CardHeader>
@@ -201,7 +199,6 @@ const BorrowPage = () => {
           </CardContent>
         </Card>
       </div>
-    </WalletRequired>
   );
 };
 

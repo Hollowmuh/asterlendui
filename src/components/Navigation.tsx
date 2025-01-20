@@ -12,7 +12,6 @@ import {
   Sun
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
-import WalletDisplay from "./WalletDisplay";
 import { Button } from "./ui/button";
 
 const Navigation = () => {
@@ -46,7 +45,7 @@ const Navigation = () => {
           >
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </Button>
-          {isOpen && <WalletDisplay />}
+          {/* {isOpen && <WalletDisplay />} */}
         </div>
       </div>
       

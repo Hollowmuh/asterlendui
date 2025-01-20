@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useWallet } from "@/contexts/WalletContext";
-import WalletConnect from "./WalletConnect";
+import { WalletConnect } from "./WalletConnect";
+import { useAccount, useDisconnect } from 'wagmi';
 
 // TODO: Replace with actual smart contract integration
 const mockTransactions = [
@@ -39,7 +39,7 @@ const getStatusColor = (status: string) => {
 };
 
 const RecentActivity = () => {
-  const { isConnected } = useWallet();
+  const { isConnected } = useAccount();
 
   // TODO: Implement contract call to fetch recent transactions
   // const fetchTransactions = async () => {
