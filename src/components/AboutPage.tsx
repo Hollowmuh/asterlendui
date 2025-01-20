@@ -18,6 +18,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import BrandLogo from '@/components/BrandLogo';
+import LendPage from "./LendPage";
 
 const AboutPage = () => {
   const { data: stats } = useQuery({
@@ -295,8 +296,8 @@ const AboutPage = () => {
               Join thousands of users already benefiting from our secure lending platform
             </p>
             <div className="flex justify-center gap-4">
-              <Button className="bg-white text-blue-600 hover:bg-gray-100">Start Lending</Button>
-              <Button variant="outline" className="border-white text-white hover:bg-white/20">
+              <Button className="bg-white text-blue-600 hover:bg-white/20" onClick={LendPage}>Start Lending</Button>
+              <Button variant="outline" className="border-white text-blue-600 hover:bg-white/20" onClick={AboutPage}>
                 Learn More
               </Button>
             </div>

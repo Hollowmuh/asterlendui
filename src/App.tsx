@@ -60,11 +60,12 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/Dashboard" element={<Index />} />
               <Route path="/lend" element={<LendPage />} />
               <Route path="/borrow" element={<BorrowPage />} />
               <Route path="/loans" element={<LoansPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/" element={<AboutPage />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
