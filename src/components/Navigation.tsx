@@ -21,11 +21,11 @@ const Navigation = () => {
   const { theme, toggleTheme } = useTheme();
 
   const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Wallet, label: "Lend", path: "/lend" },
     { icon: HandCoins, label: "Borrow", path: "/borrow" },
     { icon: FileText, label: "Loans", path: "/loans" },
-    { icon: Info, label: "About", path: "/about" },
+    { icon: Info, label: "About", path: "/" },
   ];
 
   return (
