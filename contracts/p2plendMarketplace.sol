@@ -17,6 +17,7 @@ error RepayFailed();
 error BadGracePeriod();
 error CollateralCheckFailed();
 error TransferFailed();
+error InvalidToken();
 
 interface ICollateralManager {
     struct CollateralInfo {
@@ -26,9 +27,10 @@ interface ICollateralManager {
         uint256 lastPrice;
         bool isActive;
         bool requiresTopUp;
+        address lendingToken;
     }
     
-    function initializeLoan(uint256 loanId, address borrower, address token, uint256 amount) external;
+    function initializeLoan(uint256 loanId, address borrower, address token, uint256 amount, address lendingToken) external payable;
     function releaseLoanCollateral(uint256 loanId, address borrower) external;
     function checkCollateralization(uint256 loanId, uint256 loanAmount) external returns (bool);
     function liquidateCollateral(uint256 loanId, uint256 loanAmount) external;
@@ -38,95 +40,120 @@ interface ICollateralManager {
 contract P2PLendingMarketplace is ReentrancyGuard, Ownable {
     using Math for uint256;
 
-    // Constants - packed for gas optimization
-    uint16 private constant BASIS_POINTS = 10000;
-    uint16 private constant MAX_INTEREST_RATE = 3000; // 30%
-    uint256 private constant MIN_LOAN_DURATION = 1 days;
-    uint256 private constant MAX_GRACE_PERIOD = 30 days;
-    uint256 private constant MAX_LOAN_DURATION = 365 days;
+    // Pack constants into single storage slot
+    struct Constants {
+        uint256 basisPoints;
+        uint256 maxInterestRate;
+        uint256 minLoanDuration;
+        uint256 maxGracePeriod;
+        uint256 maxLoanDuration;
+    }
 
-    // Compact structs for gas optimization
+    // Packed struct for storage optimization
     struct LenderListing {
-        address lender;
-        uint256 amount;
-        uint16 minInterestRate;
-        uint32 maxDuration;
-        uint16 minCollateralRatio;
-        bool isActive;
-        address[] acceptedCollateralTokens;
+        address lender;          // 20 bytes
+        uint256 amount;          // 12 bytes
+        uint256 minInterestRate; // 2 bytes
+        uint256 maxDuration;     // 4 bytes
+        uint256 minCollateralRatio; // 2 bytes
+        bool isActive;          // 1 byte
+        address lendingToken;   // 20 bytes
+        address[] acceptedCollateralTokens; // separate array storage
     }
 
     struct BorrowerListing {
-        address borrower;
-        uint256 amount;
-        uint16 maxInterestRate;
-        uint32 duration;
-        address collateralToken;
-        uint256 collateralAmount;
-        bool isActive;
+        address borrower;       // 20 bytes
+        uint256 amount;         // 12 bytes
+        uint256 maxInterestRate; // 2 bytes
+        uint256 duration;       // 4 bytes
+        address collateralToken; // 20 bytes
+        uint256 collateralAmount; // 12 bytes
+        bool isActive;         // 1 byte
+        address lendingToken;  // 20 bytes
     }
 
+    // Packed loan struct
     struct Loan {
-        address lender;
-        address borrower;
-        uint256 amount;
-        uint16 interestRate;
-        uint32 duration;
-        uint256 startTime;
-        uint256 gracePeriodEnd;
-        uint256 lastInterestUpdate;
-        uint256 accumulatedInterest;
-        address collateralToken;
-        uint256 collateralAmount;
-        bool isActive;
+        address lender;        // 20 bytes
+        address borrower;      // 20 bytes
+        uint256 amount;        // 12 bytes
+        uint256 interestRate;  // 2 bytes
+        uint256 duration;      // 4 bytes
+        uint256 startTime;     // 4 bytes
+        uint256 gracePeriodEnd; // 4 bytes
+        uint256 lastInterestUpdate; // 4 bytes
+        uint256 accumulatedInterest; // 12 bytes
+        address collateralToken;   // 20 bytes
+        uint256 collateralAmount;  // 12 bytes
+        bool isActive;            // 1 byte
+        address lendingToken;     // 20 bytes
     }
 
-    struct UserStats {
-        uint256 activeLoans;
-        uint256 totalInterest;
-        uint256 reputation;
-    }
+    // Constants
+    Constants private constants = Constants({
+        basisPoints: 10000,
+        maxInterestRate: 3000,
+        minLoanDuration: 1 days,
+        maxGracePeriod: 30 days,
+        maxLoanDuration: 365 days
+    });
 
     // State variables
     ICollateralManager public immutable collateralManager;
-    IERC20 public immutable stablecoin;
     
-    mapping(uint256 => LenderListing) public lenderListings;
-    mapping(uint256 => BorrowerListing) public borrowerListings;
-    mapping(uint256 => Loan) public loans;
-    mapping(address => UserStats) public userStats;
+    mapping(uint256 => LenderListing) private lenderListings;
+    mapping(uint256 => BorrowerListing) private borrowerListings;
+    mapping(uint256 => Loan) private loans;
+    mapping(address => mapping(address => uint256)) private userVolumeByToken;
+    mapping(address => uint256) private userReputation;
+    mapping(address => uint256) private userActiveLoans;
+    mapping(address => bool) private validTokens;
     
     uint256 private nextListingId;
     uint256 private nextLoanId;
-    uint256 public totalVolume;
+    mapping(address => uint256) private totalVolumeByToken;
 
     // Events
-    event ListingCreated(uint256 indexed id, address indexed user, uint256 amount, uint16 rate, bool isLender);
-    event LoanMatched(uint256 indexed id, address indexed lender, address indexed borrower, uint256 amount);
-    event LoanRepaid(uint256 indexed id, uint256 amount, uint256 interest);
+    event ListingCreated(uint256 indexed id, address indexed user, uint256 amount, uint256 rate, bool isLender, address token);
+    event LoanMatched(uint256 indexed id, address indexed lender, address indexed borrower, uint256 amount, address token);
+    event LoanRepaid(uint256 indexed id, uint256 amount, uint256 interest, address token);
     event LoanLiquidated(uint256 indexed id, address indexed liquidator);
     event GracePeriodSet(uint256 indexed id, uint256 endTime);
+    event TokenStatusChanged(address indexed token, bool status);
 
-    constructor(address _stablecoin, address _collateralManager) Ownable(msg.sender) {
-        if (_stablecoin == address(0) || _collateralManager == address(0)) revert InvalidParams();
-        stablecoin = IERC20(_stablecoin);
+    constructor(address _collateralManager) Ownable(msg.sender) {
+        if (_collateralManager == address(0)) revert InvalidParams();
         collateralManager = ICollateralManager(_collateralManager);
+        validTokens[address(0)] = true; // Enable ETH by default
+    }
+
+    // Optimized token management
+    function setTokenStatus(address token, bool status) external onlyOwner {
+        validTokens[token] = status;
+        emit TokenStatusChanged(token, status);
     }
 
     function createLenderListing(
         uint256 amount,
-        uint16 minInterestRate,
-        uint32 maxDuration,
+        uint256 minInterestRate,
+        uint256 maxDuration,
         address[] calldata acceptedTokens,
-        uint16 minCollateralRatio
-    ) external nonReentrant returns (uint256) {
-        if (amount == 0 || 
-            minInterestRate > MAX_INTEREST_RATE || 
-            maxDuration > MAX_LOAN_DURATION || 
-            maxDuration < MIN_LOAN_DURATION) revert InvalidParams();
-        
+        uint256 minCollateralRatio,
+        address lendingToken
+    ) external payable nonReentrant returns (uint256) {
+        if (!_validateListingParams(amount, minInterestRate, maxDuration, lendingToken)) 
+            revert InvalidParams();
+
         uint256 listingId = nextListingId++;
         
+        if (lendingToken == address(0)) {
+            if (msg.value != amount) revert InsufficientAmount();
+        } else {
+            if (msg.value > 0) revert InvalidParams();
+            if (!_transferToken(lendingToken, msg.sender, address(this), amount))
+                revert TransferFailed();
+        }
+
         lenderListings[listingId] = LenderListing({
             lender: msg.sender,
             amount: amount,
@@ -134,27 +161,31 @@ contract P2PLendingMarketplace is ReentrancyGuard, Ownable {
             maxDuration: maxDuration,
             minCollateralRatio: minCollateralRatio,
             isActive: true,
+            lendingToken: lendingToken,
             acceptedCollateralTokens: acceptedTokens
         });
 
-        if (!stablecoin.transferFrom(msg.sender, address(this), amount)) revert TransferFailed();
-
-        emit ListingCreated(listingId, msg.sender, amount, minInterestRate, true);
+        emit ListingCreated(listingId, msg.sender, amount, minInterestRate, true, lendingToken);
         return listingId;
     }
 
     function createBorrowerListing(
         uint256 amount,
-        uint16 maxInterestRate,
-        uint32 duration,
+        uint256 maxInterestRate,
+        uint256 duration,
         address collateralToken,
-        uint256 collateralAmount
-    ) external nonReentrant returns (uint256) {
-        if (amount == 0 || 
-            maxInterestRate > MAX_INTEREST_RATE || 
-            duration > MAX_LOAN_DURATION || 
-            duration < MIN_LOAN_DURATION) revert InvalidParams();
-        
+        uint256 collateralAmount,
+        address lendingToken
+    ) external payable nonReentrant returns (uint256) {
+        if (!_validateListingParams(amount, maxInterestRate, duration, lendingToken))
+            revert InvalidParams();
+        ICollateralManager.CollateralInfo memory collateralConfig = collateralManager.getCollateralInfo(0);
+        if (!collateralConfig.isActive)        revert InvalidCollateral();
+        if (collateralToken == address(0)) {
+        if (msg.value != collateralAmount)
+            revert InsufficientAmount();
+    }
+
         uint256 listingId = nextListingId++;
         
         borrowerListings[listingId] = BorrowerListing({
@@ -164,10 +195,11 @@ contract P2PLendingMarketplace is ReentrancyGuard, Ownable {
             duration: duration,
             collateralToken: collateralToken,
             collateralAmount: collateralAmount,
-            isActive: true
+            isActive: true,
+            lendingToken: lendingToken
         });
 
-        emit ListingCreated(listingId, msg.sender, amount, maxInterestRate, false);
+        emit ListingCreated(listingId, msg.sender, amount, maxInterestRate, false, lendingToken);
         return listingId;
     }
 
@@ -178,14 +210,31 @@ contract P2PLendingMarketplace is ReentrancyGuard, Ownable {
         if (!_validateMatch(lenderListing, borrowerListing)) revert InvalidParams();
 
         uint256 loanId = _createLoan(lenderListing, borrowerListing);
-        _initializeLoan(loanId, borrowerListing);
 
+        // Update state
         lenderListing.isActive = false;
         borrowerListing.isActive = false;
+        
+        // Update volume tracking
+        totalVolumeByToken[borrowerListing.lendingToken] += borrowerListing.amount;
+        userVolumeByToken[lenderListing.lender][borrowerListing.lendingToken] += borrowerListing.amount;
+        userVolumeByToken[borrowerListing.borrower][borrowerListing.lendingToken] += borrowerListing.amount;
 
-        totalVolume += borrowerListing.amount;
+        emit LoanMatched(loanId, lenderListing.lender, borrowerListing.borrower, borrowerListing.amount, borrowerListing.lendingToken);
+    }
 
-        emit LoanMatched(loanId, lenderListing.lender, borrowerListing.borrower, borrowerListing.amount);
+    // Internal optimized functions
+    function _validateListingParams(
+        uint256 amount,
+        uint256 interestRate,
+        uint256 duration,
+        address token
+    ) private view returns (bool) {
+        return amount > 0 && 
+               interestRate <= constants.maxInterestRate && 
+               duration >= constants.minLoanDuration && 
+               duration <= constants.maxLoanDuration &&
+               validTokens[token];
     }
 
     function _validateMatch(
@@ -196,12 +245,20 @@ contract P2PLendingMarketplace is ReentrancyGuard, Ownable {
         if (borrowerListing.maxInterestRate < lenderListing.minInterestRate) return false;
         if (borrowerListing.duration > lenderListing.maxDuration) return false;
         if (borrowerListing.amount > lenderListing.amount) return false;
+        if (borrowerListing.lendingToken != lenderListing.lendingToken) return false;
 
+        // Check if collateral token is accepted using inline assembly for gas optimization
         bool validCollateral;
-        for (uint256 i = 0; i < lenderListing.acceptedCollateralTokens.length; i++) {
-            if (lenderListing.acceptedCollateralTokens[i] == borrowerListing.collateralToken) {
-                validCollateral = true;
-                break;
+        address[] storage acceptedTokens = lenderListing.acceptedCollateralTokens;
+        assembly {
+            let len := sload(acceptedTokens.slot)
+            for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                let tokenSlot := keccak256(add(acceptedTokens.slot, i), 256)
+                let currentToken := sload(tokenSlot)
+                if eq(currentToken, sload(borrowerListing.slot)) {
+                    validCollateral := 1
+                    break
+                }
             }
         }
         return validCollateral;
@@ -219,102 +276,197 @@ contract P2PLendingMarketplace is ReentrancyGuard, Ownable {
             amount: borrowerListing.amount,
             interestRate: lenderListing.minInterestRate,
             duration: borrowerListing.duration,
-            startTime: block.timestamp,
-            gracePeriodEnd: block.timestamp + borrowerListing.duration,
-            lastInterestUpdate: block.timestamp,
+            startTime: uint256(block.timestamp),
+            gracePeriodEnd: uint256(block.timestamp + borrowerListing.duration),
+            lastInterestUpdate: uint256(block.timestamp),
             accumulatedInterest: 0,
             collateralToken: borrowerListing.collateralToken,
             collateralAmount: borrowerListing.collateralAmount,
-            isActive: true
+            isActive: true,
+            lendingToken: borrowerListing.lendingToken
         });
-
-        return loanId;
-    }
-
-    function _initializeLoan(uint256 loanId, BorrowerListing storage borrowerListing) private {
+        if (borrowerListing.collateralToken == address(0)) {
+        collateralManager.initializeLoan{value: borrowerListing.collateralAmount}(
+            loanId,
+            borrowerListing.borrower,
+            borrowerListing.collateralToken,
+            borrowerListing.collateralAmount,
+            borrowerListing.lendingToken
+        );
+    } else {
         collateralManager.initializeLoan(
             loanId,
             borrowerListing.borrower,
             borrowerListing.collateralToken,
-            borrowerListing.collateralAmount
+            borrowerListing.collateralAmount,
+            borrowerListing.lendingToken
         );
-
-        if (!stablecoin.transfer(borrowerListing.borrower, borrowerListing.amount)) 
-            revert TransferFailed();
     }
 
-    function repayLoan(uint256 loanId) external nonReentrant {
-        Loan storage loan = loans[loanId];
-        if (!loan.isActive) revert LoanInactive();
-        if (msg.sender != loan.borrower) revert Unauthorized();
-
-        _updateInterest(loanId);
-        uint256 totalRepayment = loan.amount + loan.accumulatedInterest;
-
-        loan.isActive = false;
-        
-        if (!stablecoin.transferFrom(msg.sender, loan.lender, totalRepayment)) 
-            revert RepayFailed();
-        
-        collateralManager.releaseLoanCollateral(loanId, msg.sender);
-
-        _updateUserStats(loan);
-
-        emit LoanRepaid(loanId, loan.amount, loan.accumulatedInterest);
+        return loanId;
     }
 
-    function liquidateLoan(uint256 loanId) external nonReentrant {
-        Loan storage loan = loans[loanId];
-        if (!loan.isActive) revert LoanInactive();
-
-        if (!collateralManager.checkCollateralization(loanId, loan.amount)) {
-            loan.isActive = false;
-            collateralManager.liquidateCollateral(loanId, loan.amount);
-            emit LoanLiquidated(loanId, msg.sender);
+    function _transferToken(
+        address token,
+        address from,
+        address to,
+        uint256 amount
+    ) private returns (bool) {
+        if (token == address(0)) {
+            (bool success,) = to.call{value: amount}("");
+            return success;
         } else {
-            revert CollateralCheckFailed();
+            return IERC20(token).transferFrom(from, to, amount);
         }
     }
+    // Add these functions to the P2PLendingMarketplace contract
 
-    function _updateInterest(uint256 loanId) private {
-        Loan storage loan = loans[loanId];
-        uint256 timeElapsed = block.timestamp - loan.lastInterestUpdate;
-        if (timeElapsed == 0) return;
+function repayLoan(uint256 loanId) external payable nonReentrant {
+    Loan storage loan = loans[loanId];
+    if (!loan.isActive) revert LoanInactive();
+    if (loan.borrower != msg.sender) revert Unauthorized();
 
-        uint256 newInterest = (loan.amount * loan.interestRate * timeElapsed) / (365 days) / BASIS_POINTS;
-        loan.accumulatedInterest += newInterest;
-        loan.lastInterestUpdate = block.timestamp;
+    uint256 totalDue = _calculateTotalDue(loanId);
+    
+    if (loan.lendingToken == address(0)) {
+        if (msg.value < totalDue) revert InsufficientAmount();
+        (bool success,) = loan.lender.call{value: totalDue}("");
+        if (!success) revert RepayFailed();
+        if (msg.value > totalDue) {
+            (bool refundSuccess,) = msg.sender.call{value: msg.value - totalDue}("");
+            if (!refundSuccess) revert RepayFailed();
+        }
+    } else {
+        if (!_transferToken(loan.lendingToken, msg.sender, loan.lender, totalDue))
+            revert RepayFailed();
     }
 
-    function _updateUserStats(Loan storage loan) private {
-        UserStats storage borrowerStats = userStats[loan.borrower];
-        UserStats storage lenderStats = userStats[loan.lender];
-        
-        borrowerStats.activeLoans--;
-        borrowerStats.totalInterest += loan.accumulatedInterest;
-        borrowerStats.reputation++;
-        
-        lenderStats.activeLoans--;
-        lenderStats.totalInterest += loan.accumulatedInterest;
-        lenderStats.reputation++;
-    }
+    // Release collateral
+    collateralManager.releaseLoanCollateral(loanId, loan.borrower);
+    
+    loan.isActive = false;
+    userActiveLoans[loan.borrower]--;
+    userReputation[loan.borrower]++;
 
-    function setGracePeriod(uint256 loanId, uint256 gracePeriod) external {
-        Loan storage loan = loans[loanId];
-        if (msg.sender != loan.lender) revert Unauthorized();
-        if (!loan.isActive) revert LoanInactive();
-        if (gracePeriod > MAX_GRACE_PERIOD) revert BadGracePeriod();
+    emit LoanRepaid(loanId, loan.amount, totalDue - loan.amount, loan.lendingToken);
+}
 
-        loan.gracePeriodEnd = block.timestamp + gracePeriod;
-        emit GracePeriodSet(loanId, loan.gracePeriodEnd);
-    }
+function setGracePeriod(uint256 loanId, uint256 newEndTime) external nonReentrant {
+    Loan storage loan = loans[loanId];
+    if (!loan.isActive) revert LoanInactive();
+    if (loan.lender != msg.sender) revert Unauthorized();
+    
+    uint256 maxAllowedEnd = loan.gracePeriodEnd + constants.maxGracePeriod;
+    if (newEndTime > maxAllowedEnd) revert BadGracePeriod();
+    
+    loan.gracePeriodEnd = newEndTime;
+    emit GracePeriodSet(loanId, newEndTime);
+}
 
-    // View functions
+function liquidateLoan(uint256 loanId) external nonReentrant {
+    Loan storage loan = loans[loanId];
+    if (!loan.isActive) revert LoanInactive();
+    
+    // Check if loan is eligible for liquidation
+    if (block.timestamp <= loan.gracePeriodEnd) revert Unauthorized();
+    
+    // Check collateralization status
+    if (!collateralManager.checkCollateralization(loanId, _calculateTotalDue(loanId)))
+        revert CollateralCheckFailed();
+    
+    // Perform liquidation
+    collateralManager.liquidateCollateral(loanId, _calculateTotalDue(loanId));
+    
+    loan.isActive = false;
+    userActiveLoans[loan.borrower]--;
+    userReputation[loan.borrower]--;
+
+    emit LoanLiquidated(loanId, msg.sender);
+}
+
+function _calculateTotalDue(uint256 loanId) internal view returns (uint256) {
+    Loan storage loan = loans[loanId];
+    uint256 timeElapsed = block.timestamp - loan.lastInterestUpdate;
+    uint256 additionalInterest = (loan.amount * loan.interestRate * timeElapsed) / 
+                                (constants.basisPoints * 365 days);
+    return loan.amount + loan.accumulatedInterest + additionalInterest;
+}
+
+function getLoanStatus(uint256 loanId) external view returns (
+    bool isActive,
+    bool isOverdue,
+    uint256 totalDue,
+    uint256 gracePeriodEnd
+) {
+    Loan storage loan = loans[loanId];
+    return (
+        loan.isActive,
+        block.timestamp > loan.gracePeriodEnd,
+        _calculateTotalDue(loanId),
+        loan.gracePeriodEnd
+    );
+}
+
+    // View functions optimized for gas
     function getLoan(uint256 loanId) external view returns (Loan memory) {
         return loans[loanId];
     }
 
-    function getUserStats(address user) external view returns (UserStats memory) {
-        return userStats[user];
+    function getUserVolume(address user, address token) external view returns (uint256) {
+        return userVolumeByToken[user][token];
     }
+
+    function getUserReputation(address user) external view returns (uint256) {
+        return userReputation[user];
+    }
+    // Add these functions to your P2PLendingMarketplace contract
+
+function getLenderListing(uint256 listingId) external view returns (
+    address lender,
+    uint256 amount,
+    uint256 minInterestRate,
+    uint256 maxDuration,
+    address[] memory acceptedCollateralTokens,
+    uint256 minCollateralRatio,
+    bool isActive,
+    address lendingToken
+) {
+    LenderListing storage listing = lenderListings[listingId];
+    return (
+        listing.lender,
+        listing.amount,
+        listing.minInterestRate,
+        listing.maxDuration,
+        listing.acceptedCollateralTokens,
+        listing.minCollateralRatio,
+        listing.isActive,
+        listing.lendingToken
+    );
+}
+
+function getBorrowerListing(uint256 listingId) external view returns (
+    address borrower,
+    uint256 amount,
+    uint256 maxInterestRate,
+    uint256 duration,
+    address collateralToken,
+    uint256 collateralAmount,
+    bool isActive,
+    address lendingToken
+) {
+    BorrowerListing storage listing = borrowerListings[listingId];
+    return (
+        listing.borrower,
+        listing.amount,
+        listing.maxInterestRate,
+        listing.duration,
+        listing.collateralToken,
+        listing.collateralAmount,
+        listing.isActive,
+        listing.lendingToken
+    );
+}
+
+    receive() external payable {}
+    fallback() external payable {}
 }

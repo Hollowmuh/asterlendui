@@ -21,19 +21,20 @@ async function main() {
     // const ngnaAddress = process.env.NGNATOKEN_ADDRESS;
     // const daiAddress = process.env.DAITOKEN_ADDRESS;
     const usdtAddress = process.env.USDTTOKEN_ADDRESS;
+    const collateral = process.env.COLLATERAL_MANAGER_ADDRESS;
 
-    // Get the contract factoryProjectId
-    const collateral = await ethers.getContractFactory("CollateralManager", wallet);
+    // // Get the contract factoryProjectId
+    // const collateral = await ethers.getContractFactory("CollateralManager", wallet);
     const Marketplace = await ethers.getContractFactory("P2PLendingMarketplace", wallet);
 
     console.log("Deploying collateral Manager contract...");
 
     // Deploy the contract
-    const CollateralManager = await collateral.deploy();
-    console.log("Collateral manager deployed")
-    await CollateralManager.waitForDeployment();
-    console.log("Collateral Manager deployed to: ",await CollateralManager.getAddress());
-    const marketplace = await Marketplace.deploy(usdtAddress, CollateralManager.getAddress());
+    // const CollateralManager = await collateral.deploy();
+    // console.log("Collateral manager deployed")
+    // await CollateralManager.waitForDeployment();
+    // console.log("Collateral Manager deployed to: ",await CollateralManager.getAddress());
+    const marketplace = await Marketplace.deploy(collateral);
     console.log("Marketplace deployed")
     await marketplace.waitForDeployment();
     console.log("Marketplace deployed to: ",await marketplace.getAddress());

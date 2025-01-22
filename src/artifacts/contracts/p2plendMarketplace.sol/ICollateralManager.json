@@ -68,6 +68,11 @@
               "internalType": "bool",
               "name": "requiresTopUp",
               "type": "bool"
+            },
+            {
+              "internalType": "address",
+              "name": "lendingToken",
+              "type": "address"
             }
           ],
           "internalType": "struct ICollateralManager.CollateralInfo",
@@ -99,11 +104,16 @@
           "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "lendingToken",
+          "type": "address"
         }
       ],
       "name": "initializeLoan",
       "outputs": [],
-      "stateMutability": "nonpayable",
+      "stateMutability": "payable",
       "type": "function"
     },
     {

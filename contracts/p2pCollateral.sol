@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-// Custom errors for gas optimization
 error InvalidParameters();
 error UnauthorizedAccess();
 error InsufficientCollateral();
@@ -16,15 +15,11 @@ error CollateralNotActive();
 error InvalidPriceFeed();
 error LiquidationFailed();
 error TransferFailed();
+error InvalidToken();
 
-/**
- * @title CollateralManager
- * @notice Manages collateral for the P2P lending marketplace
- */
 contract CollateralManager is ReentrancyGuard, Ownable {
     using Math for uint256;
 
-    // Constants
     uint256 private constant BASIS_POINTS = 10000;
     uint256 private constant PRICE_PRECISION = 8;
     uint256 private constant MIN_COLLATERAL_RATIO = 125; // 125%
@@ -40,6 +35,7 @@ contract CollateralManager is ReentrancyGuard, Ownable {
         uint256 lastPrice;
         bool isActive;
         bool requiresTopUp;
+        address lendingToken; // Added to track which token was lent
     }
 
     struct PriceFeed {
@@ -49,58 +45,62 @@ contract CollateralManager is ReentrancyGuard, Ownable {
         bool isActive;
     }
 
-    // State variables
+    struct TokenConfig {
+        bool isActive;
+        uint256 decimals;
+        address priceFeed;
+    }
+
     address public marketplace;
     mapping(uint256 => CollateralInfo) public collaterals;
     mapping(address => PriceFeed) public priceFeeds;
     mapping(uint256 => bool) public liquidatedLoans;
+    mapping(address => TokenConfig) public tokenConfigs;
 
-    // Events
     event CollateralDeposited(uint256 indexed loanId, address token, uint256 amount);
     event CollateralReleased(uint256 indexed loanId, address borrower, uint256 amount);
     event CollateralLiquidated(uint256 indexed loanId, address liquidator, uint256 amount);
     event PriceUpdated(address indexed token, uint256 price);
     event TopUpRequired(uint256 indexed loanId, uint256 requiredAmount);
+    event TokenConfigured(address indexed token, address priceFeed, uint256 decimals);
 
+    constructor() Ownable(msg.sender) {}
 
-    // Additional state variables
-    mapping(address => bool) public whitelistedTokens;
-    mapping(address => uint256) public tokenDecimals;
-
-    // Constructor remains unchanged
-
-    // Modifier for marketplace-only functions
     modifier onlyMarketplace() {
         if (msg.sender != marketplace) revert UnauthorizedAccess();
         _;
     }
-    constructor () Ownable(msg.sender) {
-        
-    }
-    // Setup functions
+
     function setMarketplace(address _marketplace) external onlyOwner {
         if (_marketplace == address(0)) revert InvalidParameters();
         marketplace = _marketplace;
     }
 
-    function setTokenPriceFeed(
+    function configureToken(
         address token,
         address priceFeed,
-        uint8 decimals
+        uint256 decimals
     ) external onlyOwner {
         if (token == address(0) || priceFeed == address(0)) revert InvalidParameters();
         
-        whitelistedTokens[token] = true;
-        tokenDecimals[token] = decimals;
+        tokenConfigs[token] = TokenConfig({
+            isActive: true,
+            decimals: decimals,
+            priceFeed: priceFeed
+        });
+
         priceFeeds[token] = PriceFeed({
             feed: AggregatorV3Interface(priceFeed),
             lastUpdate: block.timestamp,
             price: 0,
             isActive: true
         });
+
+        emit TokenConfigured(token, priceFeed, decimals);
     }
 
     function updatePrice(address token) public {
+        if (!tokenConfigs[token].isActive) revert InvalidToken();
         PriceFeed storage feed = priceFeeds[token];
         if (!feed.isActive) revert InvalidPriceFeed();
 
@@ -118,9 +118,10 @@ contract CollateralManager is ReentrancyGuard, Ownable {
         uint256 loanId,
         address borrower,
         address token,
-        uint256 amount
-    ) external nonReentrant onlyMarketplace {
-        if (!whitelistedTokens[token]) revert InvalidParameters();
+        uint256 amount,
+        address lendingToken
+    ) public payable nonReentrant onlyMarketplace {
+        if (!tokenConfigs[token].isActive) revert InvalidToken();
         if (amount == 0) revert InsufficientCollateral();
 
         updatePrice(token);
@@ -131,12 +132,17 @@ contract CollateralManager is ReentrancyGuard, Ownable {
             borrower: borrower,
             lastPrice: priceFeeds[token].price,
             isActive: true,
-            requiresTopUp: false
+            requiresTopUp: false,
+            lendingToken: lendingToken
         });
 
-        // Transfer collateral from borrower
-        if (!IERC20(token).transferFrom(borrower, address(this), amount)) {
-            revert TransferFailed();
+        // Handle ETH collateral
+        if (token == address(0)) {
+            if (msg.value != amount) revert InsufficientCollateral();
+        } else {
+            if (!IERC20(token).transferFrom(borrower, address(this), amount)) {
+                revert TransferFailed();
+            }
         }
 
         emit CollateralDeposited(loanId, token, amount);
@@ -151,29 +157,33 @@ contract CollateralManager is ReentrancyGuard, Ownable {
 
         updatePrice(collateral.token);
         uint256 collateralValue = getCollateralValue(loanId);
-        uint256 requiredCollateral = loanAmount*(MIN_COLLATERAL_RATIO)/(100);
+        uint256 requiredCollateral = (loanAmount * MIN_COLLATERAL_RATIO) / 100;
 
         bool isSufficient = collateralValue >= requiredCollateral;
         
         if (!isSufficient && !collateral.requiresTopUp) {
             collateral.requiresTopUp = true;
-            emit TopUpRequired(loanId, requiredCollateral - (collateralValue));
+            emit TopUpRequired(loanId, requiredCollateral - collateralValue);
         }
 
         return isSufficient;
     }
 
-    function topUpCollateral(uint256 loanId, uint256 amount) external nonReentrant {
+    function topUpCollateral(uint256 loanId, uint256 amount) external payable nonReentrant {
         CollateralInfo storage collateral = collaterals[loanId];
         if (!collateral.isActive) revert CollateralNotActive();
         if (msg.sender != collateral.borrower) revert UnauthorizedAccess();
 
-        collateral.amount = collateral.amount+(amount);
-        collateral.requiresTopUp = false;
-
-        if (!IERC20(collateral.token).transferFrom(msg.sender, address(this), amount)) {
-            revert TransferFailed();
+        if (collateral.token == address(0)) {
+            if (msg.value != amount) revert InvalidParameters();
+        } else {
+            if (!IERC20(collateral.token).transferFrom(msg.sender, address(this), amount)) {
+                revert TransferFailed();
+            }
         }
+
+        collateral.amount = collateral.amount + amount;
+        collateral.requiresTopUp = false;
 
         emit CollateralDeposited(loanId, collateral.token, amount);
     }
@@ -187,19 +197,24 @@ contract CollateralManager is ReentrancyGuard, Ownable {
         
         updatePrice(collateral.token);
         uint256 collateralValue = getCollateralValue(loanId);
-        uint256 liquidationThreshold = loanAmount*(LIQUIDATION_THRESHOLD)/(100);
+        uint256 liquidationThreshold = (loanAmount * LIQUIDATION_THRESHOLD) / 100;
 
         if (collateralValue > liquidationThreshold) revert LiquidationFailed();
 
-        uint256 bonusAmount = collateral.amount*(LIQUIDATION_BONUS)/(BASIS_POINTS);
-        uint256 liquidationAmount = collateral.amount+(bonusAmount);
+        uint256 bonusAmount = (collateral.amount * LIQUIDATION_BONUS) / BASIS_POINTS;
+        uint256 liquidationAmount = collateral.amount + bonusAmount;
 
         collateral.isActive = false;
         liquidatedLoans[loanId] = true;
 
         // Transfer collateral to liquidator
-        if (!IERC20(collateral.token).transfer(msg.sender, liquidationAmount)) {
-            revert TransferFailed();
+        if (collateral.token == address(0)) {
+            (bool success,) = msg.sender.call{value: liquidationAmount}("");
+            if (!success) revert TransferFailed();
+        } else {
+            if (!IERC20(collateral.token).transfer(msg.sender, liquidationAmount)) {
+                revert TransferFailed();
+            }
         }
 
         emit CollateralLiquidated(loanId, msg.sender, liquidationAmount);
@@ -217,25 +232,26 @@ contract CollateralManager is ReentrancyGuard, Ownable {
         collateral.isActive = false;
         collateral.amount = 0;
 
-        if (!IERC20(collateral.token).transfer(borrower, amount)) {
-            revert TransferFailed();
+        if (collateral.token == address(0)) {
+            (bool success,) = borrower.call{value: amount}("");
+            if (!success) revert TransferFailed();
+        } else {
+            if (!IERC20(collateral.token).transfer(borrower, amount)) {
+                revert TransferFailed();
+            }
         }
 
         emit CollateralReleased(loanId, borrower, amount);
     }
 
-    // View functions
     function getCollateralValue(uint256 loanId) public view returns (uint256) {
         CollateralInfo storage collateral = collaterals[loanId];
         if (!collateral.isActive) revert CollateralNotActive();
 
         PriceFeed storage feed = priceFeeds[collateral.token];
-        uint256 decimals = tokenDecimals[collateral.token];
+        uint256 decimals = tokenConfigs[collateral.token].decimals;
         
-        return collateral.amount
-            *(feed.price)
-            /(10 ** decimals)
-            /(10 ** (PRICE_PRECISION - decimals));
+        return (collateral.amount * feed.price) / (10 ** decimals) / (10 ** (PRICE_PRECISION - decimals));
     }
 
     function isCollateralActive(uint256 loanId) external view returns (bool) {
@@ -244,5 +260,13 @@ contract CollateralManager is ReentrancyGuard, Ownable {
 
     function getCollateralInfo(uint256 loanId) external view returns (CollateralInfo memory) {
         return collaterals[loanId];
+    }
+
+    receive() external payable {
+        // Allow receiving ETH
+    }
+
+    fallback() external payable {
+        // Allow receiving ETH
     }
 }
