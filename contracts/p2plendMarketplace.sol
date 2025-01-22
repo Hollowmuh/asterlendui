@@ -179,8 +179,6 @@ contract P2PLendingMarketplace is ReentrancyGuard, Ownable {
     ) external payable nonReentrant returns (uint256) {
         if (!_validateListingParams(amount, maxInterestRate, duration, lendingToken))
             revert InvalidParams();
-        ICollateralManager.CollateralInfo memory collateralConfig = collateralManager.getCollateralInfo(0);
-        if (!collateralConfig.isActive)        revert InvalidCollateral();
         if (collateralToken == address(0)) {
         if (msg.value != collateralAmount)
             revert InsufficientAmount();
